@@ -27,6 +27,7 @@ app.MapGet("/" , () => "Catalogo"
     
 );
 
+
 app.MapPost("/categorias" , async (Categoria categoria , AppDbContext db) =>
 {
     try
@@ -34,12 +35,10 @@ app.MapPost("/categorias" , async (Categoria categoria , AppDbContext db) =>
         if (db.Categorias.Add(categoria) is not null)
         {
             await db.SaveChangesAsync();
-
             return Results.Created($"/categorias/{categoria.CategoriaId}", categoria);
             //return Results.Ok(categoria);
         }
         return Results.BadRequest("Problemas ao inserir a categoria");
-
     }
     catch (Exception)
     {
@@ -51,6 +50,48 @@ app.MapPost("/categorias" , async (Categoria categoria , AppDbContext db) =>
 }).WithName("Cadastro_categoria")
    .Accepts<Categoria>("application/json");
 
+app.MapGet("/categorias", async (AppDbContext db) =>await db.Categorias.ToListAsync());
+
+app.MapGet("/categorias/{id:int}", async (int id , AppDbContext db) => 
+{
+    return await db.Categorias.FindAsync(id) 
+        is Categoria categoria 
+          ? Results.Ok(categoria) 
+          : Results.NotFound("Categoria não encontrada");
+
+});
+
+app.MapPut("/categoria/{id:int}", async (int id , Categoria categoriainput , AppDbContext db) =>
+{
+    if (categoriainput.CategoriaId != id)
+    {
+        return Results.BadRequest();
+    }
+    var categoriaDb = await db.Categorias.FindAsync(id);
+
+    if (categoriaDb is null) return Results.NotFound();
+
+    categoriaDb.Nome = categoriainput.Nome;
+    categoriaDb.Descricao = categoriainput.Descricao;
+
+    db.SaveChanges();
+    return Results.Ok( categoriaDb);
+
+});
+
+app.MapDelete("categoria/id:int" , async (int id , AppDbContext db) =>
+{
+    var categoriaDb = await db.Categorias.FindAsync(id);
+
+    if (categoriaDb is null) return Results.NotFound("Categoria não encontrada");
+
+    db.Remove(categoriaDb);
+    db.SaveChanges() ;
+    return Results.NoContent();
+
+
+});
+
 app.MapPost("/produtos" , async (Produto produto , AppDbContext db) =>
 {
     try
@@ -59,10 +100,8 @@ app.MapPost("/produtos" , async (Produto produto , AppDbContext db) =>
         {
             await db.SaveChangesAsync();
             return Results.Created( $"/produtos/{produto.ProdutoId}" , produto);
-
         }
         return Results.BadRequest("Problemas ao cadastror produtos");
-        
     }
     catch (Exception)
     {
