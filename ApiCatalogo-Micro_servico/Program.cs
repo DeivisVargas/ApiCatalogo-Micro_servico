@@ -12,6 +12,7 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Diagnostics.Metrics;
 using System.Reflection.Metadata;
 using ApiCatalogo_Micro_servico.ApiEndPoints;
+using ApiCatalogo_Micro_servico.AppServiceExtensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -98,11 +99,12 @@ app.MapProdutosEndpoints();
 
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+var enviroment = app.Environment;
+
+//fazendo as chamadas dos metodos de extenção criados separadamente 
+app.UseExeptionHandling(enviroment)
+    .UseSwaggerBuilder()
+    .UseAppCors();
 
 
 //incluido serviço de autorização e autenticação ;
